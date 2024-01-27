@@ -25,202 +25,234 @@ import { useTranslation } from 'react-i18next'
 const SettingForm = (props: any) => {
   // ** Props
   const { knowledgeId, knowledgeName, userId } = props
-  
+
   // ** Hook
   const { t } = useTranslation()
 
-  const openApiBaseText = "Example: https://api.openai.com/v1";
-    
+  const openApiBaseText = 'Example: https://api.openai.com/v1'
+
   // ** State
   const [uploadingButton, setUploadingButton] = useState<string>(`${t('Submit')}`)
   const [isDisabledButton, setIsDisabledButton] = useState<boolean>(false)
-  
-  const [openApiBase, setOpenApiBase] = useState<string>("")
+
+  const [openApiBase, setOpenApiBase] = useState<string>('')
   const [openApiBaseError, setOpenApiBaseError] = useState<string | null>(null)
   const handleopenApiBaseChange = (event: any) => {
-    setOpenApiBase(event.target.value);
-    setOpenApiBaseError("")
-  };
+    setOpenApiBase(event.target.value)
+    setOpenApiBaseError('')
+  }
 
-  const [openApiKey, setOpenApiKey] = useState<string>("")
+  const [openApiKey, setOpenApiKey] = useState<string>('')
   const [openApiKeyError, setOpenApiKeyError] = useState<string | null>(null)
   const handleOpenApiKeyChange = (event: any) => {
-    setOpenApiKey(event.target.value);
-    if(event.target.value == "") {
-        setOpenApiKeyError(`${t('This field cannot be empty')}`)
+    setOpenApiKey(event.target.value)
+    if (event.target.value == '') {
+      setOpenApiKeyError(`${t('This field cannot be empty')}`)
+    } else {
+      setOpenApiKeyError('')
     }
-    else {
-        setOpenApiKeyError("")
-    }
-  };
-  
+  }
+
   const [inputTemperature, setInputTemperature] = useState<number>(0.5)
   const [inputTemperatureError, setInputTemperatureError] = useState<string | null>(null)
   const handleInputTemperatureChange = (event: any) => {
-    setInputTemperature(Number(event.target.value));
-    if(Number(event.target.value) < 0) {
-        setInputTemperatureError(`${t('The number entered must be more greater or equal to 0')}`)
+    setInputTemperature(Number(event.target.value))
+    if (Number(event.target.value) < 0) {
+      setInputTemperatureError(`${t('The number entered must be more greater or equal to 0')}`)
+    } else if (Number(event.target.value) >= 1) {
+      setInputTemperatureError(`${t('The number entered must be less than or equal to 1')}`)
+    } else {
+      setInputTemperatureError('')
     }
-    else if(Number(event.target.value) >= 1) {
-        setInputTemperatureError(`${t('The number entered must be less than or equal to 1')}`)
-    }
-    else {
-        setInputTemperatureError("")
-    }
-  };
-
-  const [inputModelName, setInputModelName] = useState<string>("gpt-3.5-turbo")
-  const [inputModelNameError, setInputModelNameError] = useState<string | null>(null)
-  const handleInputModelNameChange = (event: any) => {
-    setInputModelName(event.target.value);
-    if(event.target.value == "") {
-        setInputModelNameError(`${t('This field cannot be empty')}`)
-    }
-    else {
-        setInputModelNameError("")
-    }
-  };
-
-  const handleGetData = async () => {
-    const GetData: any = await axios.get('/api/getopenai/' + knowledgeId, {}).then(res => res.data)
-    console.log("GetData:", GetData)
-    setOpenApiBase(GetData?.OPENAI_API_BASE ?? '')
-    setOpenApiKey(GetData?.OPENAI_API_KEY ?? '')
-    setInputTemperature(GetData.Temperature ?? '0')
-    setInputModelName(GetData.ModelName || 'gpt-3.5-turbo')
   }
 
-  useEffect(()=>{
+  const [inputModelName, setInputModelName] = useState<string>('gpt-3.5-turbo')
+  const [inputModelNameError, setInputModelNameError] = useState<string | null>(null)
+  const handleInputModelNameChange = (event: any) => {
+    setInputModelName(event.target.value)
+    if (event.target.value == '') {
+      setInputModelNameError(`${t('This field cannot be empty')}`)
+    } else {
+      setInputModelNameError('')
+    }
+  }
+
+  //   const handleGetData = async () => {
+  //     const GetData: any = await axios.get('/api/getopenai/' + knowledgeId, {}).then(res => res.data)
+  //     console.log("GetData:", GetData)
+  //     setOpenApiBase(GetData?.OPENAI_API_BASE ?? '')
+  //     setOpenApiKey(GetData?.OPENAI_API_KEY ?? '')
+  //     setInputTemperature(GetData.Temperature ?? '0')
+  //     setInputModelName(GetData.ModelName || 'gpt-3.5-turbo')
+  //   }
+  const handleGetData = async () => {
+    try {
+      const response = await fetch('/api/getopenai/' + knowledgeId)
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+      const GetData = await response.json()
+      console.log('GetData:', GetData)
+      setOpenApiBase(GetData?.OPENAI_API_BASE ?? '')
+      setOpenApiKey(GetData?.OPENAI_API_KEY ?? '')
+      setInputTemperature(GetData.Temperature ?? '0')
+      setInputModelName(GetData.ModelName || 'gpt-3.5-turbo')
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error)
+    }
+  }
+
+  useEffect(() => {
     handleGetData()
   }, [knowledgeId])
-  
+
   const handleSubmit = async () => {
-    if(openApiKey == "") {
-        toast.error("Open AI Api cannot be empty", { duration: 4000 })
-        setIsDisabledButton(false)
-        setUploadingButton(`${t('Submit')}`)
+    if (openApiKey == '') {
+      toast.error('Open AI Api cannot be empty', { duration: 4000 })
+      setIsDisabledButton(false)
+      setUploadingButton(`${t('Submit')}`)
 
-        return
+      return
     }
-    if(inputModelName == "") {
-        toast.error("Model Name Api cannot be empty", { duration: 4000 })
-        setIsDisabledButton(false)
-        setUploadingButton(`${t('Submit')}`)
+    if (inputModelName == '') {
+      toast.error('Model Name Api cannot be empty', { duration: 4000 })
+      setIsDisabledButton(false)
+      setUploadingButton(`${t('Submit')}`)
 
-        return
+      return
     }
-    if(inputTemperature < 0 || inputTemperature > 1) {
-        toast.error("Temperature must in the range 0~1", { duration: 4000 })
-        setIsDisabledButton(false)
-        setUploadingButton(`${t('Submit')}`)
+    if (inputTemperature < 0 || inputTemperature > 1) {
+      toast.error('Temperature must in the range 0~1', { duration: 4000 })
+      setIsDisabledButton(false)
+      setUploadingButton(`${t('Submit')}`)
 
-        return
+      return
     }
 
-    const PostParams = {OPENAI_API_BASE: openApiBase, OPENAI_API_KEY: openApiKey, ModelName: inputModelName, Temperature: inputTemperature, userId: userId, knowledgeId: knowledgeId }
-    const FormSubmit: any = await axios.post('/api/setopenai', PostParams).then(res => res.data)
-    console.log("FormSubmit:", FormSubmit)
-    if(FormSubmit?.status == "ok") {
+    const PostParams = {
+      OPENAI_API_BASE: openApiBase,
+      OPENAI_API_KEY: openApiKey,
+      ModelName: inputModelName,
+      Temperature: inputTemperature,
+      userId: userId,
+      knowledgeId: knowledgeId
+    }
+    try {
+      const response = await fetch('/api/setopenai', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(PostParams)
+      })
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok')
+      }
+
+      const FormSubmit = await response.json()
+      console.log('FormSubmit:', FormSubmit)
+
+      if (FormSubmit?.status == 'ok') {
         toast.success(FormSubmit.msg, { duration: 4000 })
-    }
-    else {
+      } else {
         toast.error(FormSubmit.msg, { duration: 4000 })
+      }
+    } catch (error) {
+      console.error('There was a problem with the fetch operation:', error)
     }
-
   }
 
   return (
     <Fragment>
-        <Card>
+      <Card>
         <CardHeader title={`${knowledgeName}`} />
         <CardContent>
-            <Grid container spacing={5}>
-                <Grid item xs={12}>
-                    <TextField
-                        fullWidth
-                        label={`${t('OPENAI_API_BASE')}`}
-                        placeholder={`${t('OPENAI_API_BASE')}`}
-                        value={openApiBase}
-                        onChange={handleopenApiBaseChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position='start'>
-                                <Icon icon='mdi:account-outline' />
-                                </InputAdornment>
-                            )
-                        }}
-                        error={!!openApiBaseError}
-                        helperText={openApiBaseText}
-                    />
-                </Grid>
-                <Grid item xs={12}>
-                    <TextField
-                        fullWidth
-                        label={`${t('OPENAI_API_KEY')}`}
-                        placeholder={`${t('OPENAI_API_KEY')}`}
-                        value={openApiKey}
-                        onChange={handleOpenApiKeyChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position='start'>
-                                <Icon icon='mdi:account-outline' />
-                                </InputAdornment>
-                            )
-                        }}
-                        error={!!openApiKeyError}
-                        helperText={openApiKeyError}
-                    />
-                </Grid>
-                <Grid item xs={6}>
-                    <TextField
-                        fullWidth
-                        type='number'
-                        label={`${t('Temperature')}`}
-                        placeholder={`${t('Temperature')}`}
-                        value={inputTemperature}
-                        onChange={handleInputTemperatureChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position='start'>
-                                <Icon icon='mdi:account-outline' />
-                                </InputAdornment>
-                            )
-                        }}
-                        error={!!inputTemperatureError}
-                        helperText={inputTemperatureError}
-                    />
-                </Grid>
-                <Grid item xs={6}>
-                    <TextField
-                        fullWidth
-                        label={`${t('ModelName')}`}
-                        placeholder={`${t('ModelName')}`}
-                        value={inputModelName}
-                        onChange={handleInputModelNameChange}
-                        InputProps={{
-                            startAdornment: (
-                                <InputAdornment position='start'>
-                                <Icon icon='mdi:account-outline' />
-                                </InputAdornment>
-                            )
-                        }}
-                        error={!!inputModelNameError}
-                        helperText={inputModelNameError}
-                    />
-                </Grid>
-
-                <Grid item xs={12} container justifyContent="flex-end">
-                    <Button type='submit' variant='contained' size='large' onClick={handleSubmit} disabled={isDisabledButton} >
-                        {uploadingButton}
-                    </Button>
-                </Grid>
+          <Grid container spacing={5}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={`${t('OPENAI_API_BASE')}`}
+                placeholder={`${t('OPENAI_API_BASE')}`}
+                value={openApiBase}
+                onChange={handleopenApiBaseChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <Icon icon='mdi:account-outline' />
+                    </InputAdornment>
+                  )
+                }}
+                error={!!openApiBaseError}
+                helperText={openApiBaseText}
+              />
             </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label={`${t('OPENAI_API_KEY')}`}
+                placeholder={`${t('OPENAI_API_KEY')}`}
+                value={openApiKey}
+                onChange={handleOpenApiKeyChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <Icon icon='mdi:account-outline' />
+                    </InputAdornment>
+                  )
+                }}
+                error={!!openApiKeyError}
+                helperText={openApiKeyError}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                type='number'
+                label={`${t('Temperature')}`}
+                placeholder={`${t('Temperature')}`}
+                value={inputTemperature}
+                onChange={handleInputTemperatureChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <Icon icon='mdi:account-outline' />
+                    </InputAdornment>
+                  )
+                }}
+                error={!!inputTemperatureError}
+                helperText={inputTemperatureError}
+              />
+            </Grid>
+            <Grid item xs={6}>
+              <TextField
+                fullWidth
+                label={`${t('ModelName')}`}
+                placeholder={`${t('ModelName')}`}
+                value={inputModelName}
+                onChange={handleInputModelNameChange}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position='start'>
+                      <Icon icon='mdi:account-outline' />
+                    </InputAdornment>
+                  )
+                }}
+                error={!!inputModelNameError}
+                helperText={inputModelNameError}
+              />
+            </Grid>
+
+            <Grid item xs={12} container justifyContent='flex-end'>
+              <Button type='submit' variant='contained' size='large' onClick={handleSubmit} disabled={isDisabledButton}>
+                {uploadingButton}
+              </Button>
+            </Grid>
+          </Grid>
         </CardContent>
-        </Card>
-        
+      </Card>
     </Fragment>
   )
 }
-
 
 export default SettingForm
